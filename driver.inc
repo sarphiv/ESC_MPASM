@@ -40,14 +40,9 @@ DRV_NEXT_STEP
     BTFSS   ESTAT, DRV_STATE
     RETURN
     
-;    BCF	    STATUS, RP0
-;    MOVLW   h'FF'
-;    XORWF   PORTC, F
-;    
-;    RETURN
     ;Load correct step pin outputs into working memory
     
-DRV_CHCK_STEP0
+    DRV_CHCK_STEP0
     ;Check if step 0
     MOVLW   d'0'
     SUBWF   DRV_CUR_STEP, W
@@ -58,7 +53,7 @@ DRV_CHCK_STEP0
     
     GOTO    DRV_NEXT_STEP_APPLY
     
-DRV_CHCK_STEP1
+    DRV_CHCK_STEP1
     ;Check if step 1
     MOVLW   d'1'
     SUBWF   DRV_CUR_STEP, W
@@ -69,7 +64,7 @@ DRV_CHCK_STEP1
     
     GOTO    DRV_NEXT_STEP_APPLY
 
-DRV_CHCK_STEP2
+    DRV_CHCK_STEP2
     ;Check if step 2
     MOVLW   d'2'
     SUBWF   DRV_CUR_STEP, W
@@ -80,7 +75,7 @@ DRV_CHCK_STEP2
     
     GOTO    DRV_NEXT_STEP_APPLY
     
-DRV_CHCK_STEP3
+    DRV_CHCK_STEP3
     ;Check if step 3
     MOVLW   d'3'
     SUBWF   DRV_CUR_STEP, W
@@ -91,7 +86,7 @@ DRV_CHCK_STEP3
     
     GOTO    DRV_NEXT_STEP_APPLY
     
-DRV_CHCK_STEP4
+    DRV_CHCK_STEP4
     ;Check if step 4
     MOVLW   d'4'
     SUBWF   DRV_CUR_STEP, W
@@ -102,11 +97,11 @@ DRV_CHCK_STEP4
     
     GOTO    DRV_NEXT_STEP_APPLY
     
-DRV_CHCK_STEP5
+    DRV_CHCK_STEP5
     ;It is step 5
     MOVLW   STEP5
     
-DRV_NEXT_STEP_APPLY
+    DRV_NEXT_STEP_APPLY
     BCF	    STATUS, RP0		;BANK 0
     MOVWF   PORTC		;Update driver pins
     
@@ -117,9 +112,5 @@ DRV_NEXT_STEP_APPLY
     SUBLW   d'5'
     BTFSS   STATUS, C
     CLRF    DRV_CUR_STEP
-    
-    
-    ;BCF	    PIR1, TMR1IF	;Clear Timer1 interrupt flag
-    BCF	    INTCON, T0IF
     
     RETURN

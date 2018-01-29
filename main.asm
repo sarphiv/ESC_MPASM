@@ -36,7 +36,8 @@ INCLUDE "p16f684.inc"
 
 ; ******* MODULES ***************************************************
 #INCLUDE    "driver.inc"
-#INCLUDE    "timer.inc"    
+#INCLUDE    "timer.inc"
+#INCLUDE    "BEMF.inc"
 #INCLUDE    "ISR.inc"
     
 ; ******* SETUP *****************************************************
@@ -50,12 +51,6 @@ INIT
     ;CALL    DRV_NEXT_STEP
 LOOP
     
-    ;create a timer to step through the steps
-    ;call next step a few times and shit... not in here.. 
-    ;but in the timer interrupt
-    ;then hook up that motor and watch it burn
-;    BCF	    STATUS, RP0
-;    BSF	    PORTC, 0
     
     GOTO    LOOP		;Goto start of loop
     
