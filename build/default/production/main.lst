@@ -1,4 +1,4 @@
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  1
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -37,245 +37,377 @@ Warning[205]: Found directive in column 1. (INCLUDE)
                       00018 ; ******* CONSTANTS *************************************************
                       00019     ;Step table
                       00020     ;All off            b'00111000'
-                      00021     ;All on                 b'00000111'
+                      00021     ;All on (NEVER USE) b'00000111'
+Warning[207]: Found label after column 1. (STEPOFF)
+  00000038            00022     STEPOFF         EQU b'00111000' ;All off
 Warning[207]: Found label after column 1. (STEP0)
-  00000029            00022     STEP0           EQU b'00101001' ;0+4 on
+  00000029            00023     STEP0           EQU b'00101001' ;0+4 on
 Warning[207]: Found label after column 1. (STEP1)
-  0000002C            00023     STEP1           EQU b'00101100' ;2+4 on
+  0000002C            00024     STEP1           EQU b'00101100' ;2+4 on
 Warning[207]: Found label after column 1. (STEP2)
-  00000034            00024     STEP2           EQU b'00110100' ;2+3 on
+  00000034            00025     STEP2           EQU b'00110100' ;2+3 on
 Warning[207]: Found label after column 1. (STEP3)
-  00000032            00025     STEP3           EQU b'00110010' ;1+3 on
+  00000032            00026     STEP3           EQU b'00110010' ;1+3 on
 Warning[207]: Found label after column 1. (STEP4)
-  0000001A            00026     STEP4           EQU b'00011010' ;1+5 on
+  0000001A            00027     STEP4           EQU b'00011010' ;1+5 on
 Warning[207]: Found label after column 1. (STEP5)
-  00000019            00027     STEP5           EQU b'00011001' ;0+5 on
-                      00028     
-                      00029     ;ESTAT bits
-Warning[207]: Found label after column 1. (DRV_STATE)
-  00000001            00030     DRV_STATE       EQU d'1'
+  00000019            00028     STEP5           EQU b'00011001' ;0+5 on
+                      00029    
+Warning[207]: Found label after column 1. (TMR_OPN_LP_LIM)
+  000000FE            00030     TMR_OPN_LP_LIM  EQU d'254'  ;254
                       00031             
-                      00032     cblock  0x70
-  00000070            00033     DRV_CUR_STEP
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  2
+                      00032     ;ESTAT bits
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-  00000071            00034     ESTAT
-                      00035     endc
-                      00036 
-                      00037 ; ******* MODULES ***************************************************
-                      00038 #INCLUDE    "driver.inc"
+Warning[207]: Found label after column 1. (DRV_RUN)
+  00000000            00033     DRV_RUN         EQU d'0'
+Warning[207]: Found label after column 1. (DRV_NEXT_EMFVAL)
+  00000001            00034     DRV_NEXT_EMFVAL EQU d'1'
+Warning[207]: Found label after column 1. (TMR_CLS_LOOP)
+  00000002            00035     TMR_CLS_LOOP    EQU d'2'        ;1 = BEMF control, 0 = Timer control
+                      00036             
+                      00037     cblock  0x70
+  00000070            00038     DRV_CUR_STEP
+  00000071            00039     ESTAT
+  00000072            00040     TEMPA
+  00000073            00041     TEMPB
+  00000074            00042     TMR_CYCLES1
+  00000075            00043     TMR_CYCLES2
+                      00044     endc
+                      00045 
+                      00046 ; ******* MODULES ***************************************************
+                      00047 #INCLUDE    "driver.inc"
 0005                  00001 DRV_INIT
 0005   01F0           00002     CLRF    DRV_CUR_STEP        ;Reset step counter
-0006   10F1           00003     BCF     ESTAT, DRV_STATE    ;Set driver state to off
-                      00004     
-0007   1283           00005     BCF     STATUS, RP0         ;BANK 0
-                      00006     ;Turn comparators off
-0008   3007           00007     MOVLW   b'00000111'
+0006   1071           00003     BCF     ESTAT, DRV_RUN      ;Set driver state to off
+0007   14F1           00004     BSF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to high
+                      00005     
+0008   1283           00006     BCF     STATUS, RP0         ;BANK 0
+                      00007     
+0009   3007           00008     MOVLW   b'00000111'         ;Turn comparators off
 Message[305]: Using default destination of 1 (file).
-0009   0499           00008     IORWF   CMCON0
-                      00009     
-                      00010     ;Turn off all driver pins
-000A   3038           00011     MOVLW   b'00111000'     
-000B   0087           00012     MOVWF   PORTC           
+000A   0499           00009     IORWF   CMCON0              ;
+                      00010         
+000B   3038           00011     MOVLW   STEPOFF             ;Turn off all driver pins
+000C   0087           00012     MOVWF   PORTC               ;
                       00013     
-000C   1683           00014     BSF     STATUS, RP0         ;BANK 1
+000D   1683           00014     BSF     STATUS, RP0         ;BANK 1
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-000D   0187           00015     CLRF    TRISC               ;Set driver control pins to output
+000E   0187           00015     CLRF    TRISC               ;Set driver control pins to output
                       00016     
-000E   3007           00017     MOVLW   b'0000111'          ;Make output pins digital
+000F   3007           00017     MOVLW   b'0000111'          ;Make output pins digital
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-000F   0591           00018     ANDWF   ANSEL, F        
+0010   0591           00018     ANDWF   ANSEL, F        
                       00019     
-0010   0008           00020     RETURN
+0011   0008           00020     RETURN
                       00021 
-0011                  00022 DRV_STOP
-0011   10F1           00023     BCF     ESTAT, DRV_STATE    ;Set driver state to off
+0012                  00022 DRV_START
+0012   1471           00023     BSF     ESTAT, DRV_RUN      ;Set driver run to on
                       00024     
-                      00025     ;Turn off all driver pins
-0012   1283           00026     BCF     STATUS, RP0         ;BANK 0
-0013   3038           00027     MOVLW   b'00111000'     
-0014   0087           00028     MOVWF   PORTC          
+0013   0008           00025     RETURN
+                      00026     
+0014                  00027 DRV_STOP
+0014   1071           00028     BCF     ESTAT, DRV_RUN      ;Set driver run to off
                       00029     
-0015   0008           00030     RETURN
-                      00031 
-0016                  00032 DRV_START
-0016   14F1           00033     BSF     ESTAT, DRV_STATE    ;Set driver state to on
+                      00030     ;Turn off all driver pins
+0015   1283           00031     BCF     STATUS, RP0         ;BANK 0
+0016   3038           00032     MOVLW   STEPOFF   
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0017   0087           00033     MOVWF   PORTC          
                       00034     
-0017   0008           00035     RETURN
+0018   0008           00035     RETURN
                       00036     
-                      00037     
-0018                  00038 DRV_NEXT_STEP
-                      00039     ;Return if driver state is off
-0018   1CF1           00040     BTFSS   ESTAT, DRV_STATE
-0019   0008           00041     RETURN
-                      00042     
-                      00043     ;Load correct step pin outputs into working memory
-                      00044     
+0019                  00037 DRV_LOAD_STEP
+                      00038     ;Temporary
+                      00039     ;RETLW   STEP0
+                      00040     
 Warning[207]: Found label after column 1. (DRV_CHCK_STEP0)
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  3
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
-001A                  00045     DRV_CHCK_STEP0
-                      00046     ;Check if step 0
-001A   3000           00047     MOVLW   d'0'
-001B   0270           00048     SUBWF   DRV_CUR_STEP, W
-001C   1D03           00049     BTFSS   STATUS, Z
-001D   2???           00050     GOTO    DRV_CHCK_STEP1
-                      00051     ;else
-001E   3029           00052     MOVLW   STEP0
-                      00053     
-001F   2???           00054     GOTO    DRV_NEXT_STEP_APPLY
-                      00055     
+0019                  00041     DRV_CHCK_STEP0
+                      00042     ;Check if step 0
+0019   3000           00043     MOVLW   d'0'
+001A   0270           00044     SUBWF   DRV_CUR_STEP, W
+001B   1D03           00045     BTFSS   STATUS, Z
+001C   2???           00046     GOTO    DRV_CHCK_STEP1
+                      00047     ;else
+001D   10F1           00048     BCF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to HIGH
+001E   3429           00049     RETLW   STEP0
+                      00050     
 Warning[207]: Found label after column 1. (DRV_CHCK_STEP1)
-0020                  00056     DRV_CHCK_STEP1
-                      00057     ;Check if step 1
-0020   3001           00058     MOVLW   d'1'
-0021   0270           00059     SUBWF   DRV_CUR_STEP, W
-0022   1D03           00060     BTFSS   STATUS, Z
-0023   2???           00061     GOTO    DRV_CHCK_STEP2
-                      00062     ;else
-0024   302C           00063     MOVLW   STEP1
-                      00064     
-0025   2???           00065     GOTO    DRV_NEXT_STEP_APPLY
-                      00066 
+001F                  00051     DRV_CHCK_STEP1
+                      00052     ;Check if step 1
+001F   3001           00053     MOVLW   d'1'
+0020   0270           00054     SUBWF   DRV_CUR_STEP, W
+0021   1D03           00055     BTFSS   STATUS, Z
+0022   2???           00056     GOTO    DRV_CHCK_STEP2
+                      00057     ;else
+0023   14F1           00058     BSF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to LOW
+0024   342C           00059     RETLW   STEP1
+                      00060 
 Warning[207]: Found label after column 1. (DRV_CHCK_STEP2)
-0026                  00067     DRV_CHCK_STEP2
-                      00068     ;Check if step 2
-0026   3002           00069     MOVLW   d'2'
-0027   0270           00070     SUBWF   DRV_CUR_STEP, W
-0028   1D03           00071     BTFSS   STATUS, Z
-0029   2???           00072     GOTO    DRV_CHCK_STEP3
-                      00073     ;else
-002A   3034           00074     MOVLW   STEP2
-                      00075     
-002B   2???           00076     GOTO    DRV_NEXT_STEP_APPLY
-                      00077     
+0025                  00061     DRV_CHCK_STEP2
+                      00062     ;Check if step 2
+0025   3002           00063     MOVLW   d'2'
+0026   0270           00064     SUBWF   DRV_CUR_STEP, W
+0027   1D03           00065     BTFSS   STATUS, Z
+0028   2???           00066     GOTO    DRV_CHCK_STEP3
+                      00067     ;else
+0029   10F1           00068     BCF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to HIGH
+002A   3434           00069     RETLW   STEP2
+                      00070     
 Warning[207]: Found label after column 1. (DRV_CHCK_STEP3)
-002C                  00078     DRV_CHCK_STEP3
-                      00079     ;Check if step 3
-002C   3003           00080     MOVLW   d'3'
-002D   0270           00081     SUBWF   DRV_CUR_STEP, W
-002E   1D03           00082     BTFSS   STATUS, Z
-002F   2???           00083     GOTO    DRV_CHCK_STEP4
-                      00084     ;else
-0030   3032           00085     MOVLW   STEP3
-                      00086     
-0031   2???           00087     GOTO    DRV_NEXT_STEP_APPLY
-                      00088     
+002B                  00071     DRV_CHCK_STEP3
+                      00072     ;Check if step 3
+002B   3003           00073     MOVLW   d'3'
+002C   0270           00074     SUBWF   DRV_CUR_STEP, W
+002D   1D03           00075     BTFSS   STATUS, Z
+002E   2???           00076     GOTO    DRV_CHCK_STEP4
+                      00077     ;else
+002F   14F1           00078     BSF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to LOW
+0030   3432           00079     RETLW   STEP3
+                      00080     
 Warning[207]: Found label after column 1. (DRV_CHCK_STEP4)
-0032                  00089     DRV_CHCK_STEP4
-                      00090     ;Check if step 4
-0032   3004           00091     MOVLW   d'4'
-0033   0270           00092     SUBWF   DRV_CUR_STEP, W
-0034   1D03           00093     BTFSS   STATUS, Z
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  4
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  4
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0035   2???           00094     GOTO    DRV_CHCK_STEP5
-                      00095     ;else
-0036   301A           00096     MOVLW   STEP4
-                      00097     
-0037   2???           00098     GOTO    DRV_NEXT_STEP_APPLY
-                      00099     
+0031                  00081     DRV_CHCK_STEP4
+                      00082     ;Check if step 4
+0031   3004           00083     MOVLW   d'4'
+0032   0270           00084     SUBWF   DRV_CUR_STEP, W
+0033   1D03           00085     BTFSS   STATUS, Z
+0034   2???           00086     GOTO    DRV_CHCK_STEP5
+                      00087     ;else
+0035   10F1           00088     BCF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to HIGH
+0036   341A           00089     RETLW   STEP4
+                      00090     
 Warning[207]: Found label after column 1. (DRV_CHCK_STEP5)
-0038                  00100     DRV_CHCK_STEP5
-                      00101     ;It is step 5
-0038   3019           00102     MOVLW   STEP5
-                      00103     
-Warning[207]: Found label after column 1. (DRV_NEXT_STEP_APPLY)
-0039                  00104     DRV_NEXT_STEP_APPLY
-0039   1283           00105     BCF     STATUS, RP0         ;BANK 0
-003A   0087           00106     MOVWF   PORTC               ;Update driver pins
+0037                  00091     DRV_CHCK_STEP5
+                      00092     ;It is step 5 or above
+0037   14F1           00093     BSF     ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to LOW
+0038   3419           00094     RETLW   STEP5                   
+                      00095     
+0039                  00096 DRV_NEXT_STEP
+                      00097     ;Return if driver state is off
+0039   1C71           00098     BTFSS   ESTAT, DRV_RUN
+003A   0008           00099     RETURN
+                      00100     
+003B   2???           00101     CALL    DRV_LOAD_STEP       ;Load correct step pin outputs into working
+                      00102     
+003C   1283           00103     BCF     STATUS, RP0         ;BANK 0
+003D   0087           00104     MOVWF   PORTC               ;Update driver pins
+                      00105     
+003E   0AF0           00106     INCF    DRV_CUR_STEP, F     ;Increment step counter
                       00107     
-003B   0AF0           00108     INCF    DRV_CUR_STEP, F     ;Increment step counter
-                      00109     
-                      00110     ;Reset current step if over step 5
-003C   0870           00111     MOVFW   DRV_CUR_STEP
-003D   3C05           00112     SUBLW   d'5'
-003E   1C03           00113     BTFSS   STATUS, C
-003F   01F0           00114     CLRF    DRV_CUR_STEP
-                      00115     
-0040   0008           00116     RETURN
-                      00039 #INCLUDE    "timer.inc"    
-0041                  00001 TMR_INIT
-0041   1683           00002     BSF     STATUS, RP0         ;Bank 1
-0042   168B           00003     BSF     INTCON, T0IE        ;Enable Timer0 (8-bit) interrupts
+                      00108     ;Reset current step if over step 5
+003F   0870           00109     MOVFW   DRV_CUR_STEP
+0040   3C05           00110     SUBLW   d'5'
+0041   1C03           00111     BTFSS   STATUS, C
+0042   01F0           00112     CLRF    DRV_CUR_STEP
+                      00113     
+0043   0008           00114     RETURN
+                      00048 
+                      00049 #INCLUDE    "BEMF.inc"
+0044                  00001 BEMF_INIT
+                      00002     ;Set up BEMF pins
+0044   1683           00003     BSF     STATUS, RP0         ;BANK 1
+0045   3007           00004     MOVLW   b'00000111'         ;Set BEMF pins to input
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0043   1281           00004     BCF     OPTION_REG, T0CS    ;Use internal clock cycle for Timer0
-0044   110B           00005     BCF     INTCON, T0IF        ;Clear Timer0 interrupt flag
-                      00006     
-0045   0064           00007     CLRWDT                      ;Clear WDT and ;prescaler 
-0046   30F0           00008     MOVLW   b'11110000'         ;Assign prescaler to Timer0 (bit 3) and clear prescaler
-Message[305]: Using default destination of 1 (file).
+0046   0485           00005     IORWF   TRISA, F            ;
+0047   30F8           00006     MOVLW   b'11111000'         ;Make BEMF pins digital
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0047   0581           00009     ANDWF   OPTION_REG          ;
-0048   3002           00010     MOVLW   b'00000010'         ;Set prescaler to 1:8
-Message[305]: Using default destination of 1 (file).
-Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0049   0481           00011     IORWF   OPTION_REG          ;
-                      00012 
-004A   0008           00013     RETURN
+0048   0591           00007     ANDWF   ANSEL, F            ;
+                      00008     
+                      00009     ;Set up interrupt
+0049   158B           00010     BSF     INTCON, RAIE        ;Enable PORTA interrupts
+004A   100B           00011     BCF     INTCON, RAIF        ;Clear PORTA interrupt flag
+                      00012     
+004B   2???           00013     CALL    BEMF_UPDATE_INTPIN  ;Set to interrupt on correct pin 
                       00014     
-004B                  00015 TMR_TRIG
-004B   2???           00016    CALL     DRV_NEXT_STEP       ;Increment driver state
-                      00017    
-004C   110B           00018    BCF      INTCON, T0IF        ;Clear Timer0 interrupt flag
-                      00019     
-004D   0008           00020    RETURN
-                      00040 #INCLUDE    "ISR.inc"
-004E                  00001 ISR_INIT    
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  5
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  5
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-                      00002 ;    BSF            INTCON, PEIE            ;Enable peripheral interupts
-004E   178B           00003     BSF     INTCON, GIE             ;Enable general interrupts
-                      00004     
-004F   0008           00005     RETURN
-                      00006 
-0050                  00007 ISR
-0050   1283           00008     BCF     STATUS, RP0             ;BANK 0
-                      00009     
-0051   190B           00010     BTFSC   INTCON, T0IF            ;Handle Timer0 interrupts
-0052   2???           00011     CALL    TMR_TRIG
-                      00012     
-0053   0009           00013     RETFIE
+004C   0008           00015     RETURN
+                      00016     
+004D                  00017 BEMF_UPDATE_INTPIN
+004D   2???           00018     CALL    DRV_LOAD_STEP       ;Load current step into working
+004E   00F2           00019     MOVWF   TEMPA               ;Create copy of step
+004F   00F3           00020     MOVWF   TEMPB               ;
+                      00021     
+0050   0CF3           00022     RRF     TEMPB, F            ;Move driver low side to high side position
+0051   0CF3           00023     RRF     TEMPB, F            ;
+0052   0CF3           00024     RRF     TEMPB, F            ;
+                      00025     
+0053   3007           00026     MOVLW   b'00000111'
+Message[305]: Using default destination of 1 (file).
+0054   05F2           00027     ANDWF   TEMPA               ;Mask away all bits except driver ID
+Message[305]: Using default destination of 1 (file).
+0055   05F3           00028     ANDWF   TEMPB               ;
+                      00029     
+0056   0872           00030     MOVF    TEMPA, W            ;Move high side drivers to working
+0057   0673           00031     XORWF   TEMPB, W            ;Isolate the inactive driver path
+                      00032     
+0058   1683           00033     BSF     STATUS, RP0         ;BANK 1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0059   0096           00034     MOVWF   IOCA                ;Update PORTA interrupt pin selector
+                      00035     
+005A   0008           00036     RETURN
+                      00037     
+005B                  00038 BEMF_TRIG
+005B   1D71           00039     BTFSS   ESTAT, TMR_CLS_LOOP ;Check if closed loop mode disabled
+005C   2???           00040     GOTO    BEMF_TRIG_END       ;Closed loop mode disabled
                       00041     
-                      00042 ; ******* SETUP *****************************************************
-0054                  00043 INIT
-0054   2???           00044     CALL    DRV_INIT
-0055   2???           00045     CALL    DRV_START
-                      00046     
-0056   2???           00047     CALL    TMR_INIT
-                      00048     
-0057   2???           00049     CALL    ISR_INIT
-                      00050     ;CALL    DRV_NEXT_STEP
-0058                  00051 LOOP
-                      00052     
-                      00053     ;create a timer to step through the steps
-                      00054     ;call next step a few times and shit... not in here.. 
-                      00055     ;but in the timer interrupt
-                      00056     ;then hook up that motor and watch it burn
-                      00057 ;    BCF            STATUS, RP0
-                      00058 ;    BSF            PORTC, 0
-                      00059     
-0058   2???           00060     GOTO    LOOP                ;Goto start of loop
-                      00061     
+                      00042     ;Figure out if state change is a correct state change
+005D   1683           00043     BSF     STATUS, RP0         ;BANK 1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+005E   0816           00044     MOVF    IOCA, W             ;Move PORTA interrupt pin selector into working
+005F   1283           00045     BCF     STATUS, RP0         ;BANK 0
+0060   0505           00046     ANDWF   PORTA, W            ;Isolate state of selected interrupt pin
+                      00047     
+Warning[207]: Found label after column 1. (BEMF_CHCK_LOW)
+0061                  00048     BEMF_CHCK_LOW                   ;Check for HIGH->LOW zero crossing
+0061   1D03           00049     BTFSS   STATUS, Z               ;Check if PORTA pin is HIGH
+0062   2???           00050     GOTO    BEMF_CHCK_HIGH          ;PORTA pin is HIGH, goto high check
+0063   18F1           00051     BTFSC   ESTAT, DRV_NEXT_EMFVAL  ;Check if NEXT_EMFVAL is not LOW
+0064   2???           00052     GOTO    BEMF_INCR_TRIG          ;Mismatch between PORTA pin and val detected
+                      00053     
+0065   2???           00054     GOTO    BEMF_NEXT               ;PORTA pin and NEXT_EMFVAL low
+                      00055     
+Warning[207]: Found label after column 1. (BEMF_CHCK_HIGH)
+0066                  00056     BEMF_CHCK_HIGH                  ;Check for LOW->HIGH zero crossing
+0066   18F1           00057     BTFSC   ESTAT, DRV_NEXT_EMFVAL  ;Check if NEXT_EMFVAL is HIGH too
+0067   2???           00058     GOTO    BEMF_NEXT               ;LOW->HIGH zero crossing confirmed
+                      00059     ;else
+Warning[207]: Found label after column 1. (BEMF_INCR_TRIG)
+0068                  00060     BEMF_INCR_TRIG              ;Incorrect trigger, mismatch detected
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0068   100B           00061     BCF     INTCON, RAIF        ;Clear PORTA interrupt flag
+                      00062     
+0069   0008           00063     RETURN
+                      00064     
+Warning[207]: Found label after column 1. (BEMF_NEXT)
+006A                  00065     BEMF_NEXT                   ;Correct state change, update driver pins
+006A   2???           00066     CALL    DRV_NEXT_STEP       ;Update driver state
+006B   2???           00067     CALL    BEMF_UPDATE_INTPIN  ;Set to interrupt on correct pin
+                      00068    
+Warning[207]: Found label after column 1. (BEMF_TRIG_END)
+006C                  00069     BEMF_TRIG_END
+006C   100B           00070     BCF     INTCON, RAIF        ;Clear PORTA interrupt flag
+                      00071     
+006D   0008           00072     RETURN
+                      00050 #INCLUDE    "timer.inc"
+006E                  00001 TMR_INIT
+006E   1171           00002     BCF     ESTAT, TMR_CLS_LOOP ;Default to open loop mode
+006F   01F4           00003     CLRF    TMR_CYCLES1         ;Reset timer counters
+0070   01F5           00004     CLRF    TMR_CYCLES2         ;
+                      00005     
+0071   1683           00006     BSF     STATUS, RP0         ;Bank 1
+0072   168B           00007     BSF     INTCON, T0IE        ;Enable Timer0 (8-bit) interrupts
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0073   1281           00008     BCF     OPTION_REG, T0CS    ;Use internal clock cycle for Timer0
+0074   110B           00009     BCF     INTCON, T0IF        ;Clear Timer0 interrupt flag
+                      00010     
+0075   0064           00011     CLRWDT                      ;Clear WDT and ;prescaler 
+0076   30F0           00012     MOVLW   b'11110000'         ;Assign prescaler to Timer0 (bit 3) and clear prescaler
+Message[305]: Using default destination of 1 (file).
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0077   0581           00013     ANDWF   OPTION_REG          ;
+0078   3002           00014     MOVLW   b'00000010'         ;Set prescaler to 1:8 (b'00000010')
+Message[305]: Using default destination of 1 (file).
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0079   0481           00015     IORWF   OPTION_REG          ;
+                      00016 
+007A   0008           00017     RETURN
+                      00018     
+007B                  00019 TMR_TRIG
+007B   1971           00020    BTFSC    ESTAT, TMR_CLS_LOOP ;Check if closed loop mode enabled
+007C   2???           00021    GOTO     TMR_TRIG_END        ;Closed loop mode enabled
+                      00022    
+007D   0875           00023    MOVF     TMR_CYCLES2, W      ;Check if above or equal to cycle limit
+007E   3C01           00024    SUBLW    d'1'                ;Ensures that we check equality
+007F   3CFE           00025    SUBLW    TMR_OPN_LP_LIM      ;Subtract to check carry flag
+0080   1C03           00026    BTFSS    STATUS, C           ;Check if above (and technically equal to too)
+0081   1571           00027    BSF      ESTAT, TMR_CLS_LOOP ;
+                      00028    
+0082   1971           00029    BTFSC    ESTAT, TMR_CLS_LOOP ;Check if closed loop mode enabled
+0083   2???           00030    GOTO     TMR_TRIG_END        ;Closed loop mode enabled
+                      00031    
+0084   2???           00032    CALL     DRV_NEXT_STEP       ;Increment driver state
+                      00033    
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0085   0BF4           00034    DECFSZ   TMR_CYCLES1, F
+0086   2???           00035    GOTO     TMR_TRIG_END
+                      00036    
+0087   0AF5           00037    INCF     TMR_CYCLES2, F      ;Increment cycle
+                      00038    
+Warning[207]: Found label after column 1. (TMR_TRIG_END)
+0088                  00039    TMR_TRIG_END
+0088   110B           00040    BCF      INTCON, T0IF        ;Clear Timer0 interrupt flag
+                      00041     
+0089   0008           00042    RETURN
+                      00051 
+                      00052 #INCLUDE    "ISR.inc"
+008A                  00001 ISR_INIT    
+008A   178B           00002     BSF     INTCON, GIE             ;Enable general interrupts
+                      00003     
+008B   0008           00004     RETURN
+                      00005 
+008C                  00006 ISR
+008C   190B           00007     BTFSC   INTCON, T0IF            ;Handle Timer0 interrupts
+008D   2???           00008     CALL    TMR_TRIG
+                      00009     
+008E   198B           00010     BTFSC   INTCON, RAIE            ;Handle PORTA change interrupts
+008F   2???           00011     CALL    BEMF_TRIG
+                      00012     
+0090   0009           00013     RETFIE
+                      00053     
+                      00054 ; ******* SETUP *****************************************************
+0091                  00055 INIT
+0091   2???           00056     CALL    DRV_INIT
+                      00057     
+0092   2???           00058     CALL    BEMF_INIT
+0093   2???           00059     CALL    TMR_INIT
+                      00060     
+0094   2???           00061     CALL    DRV_START
+0095   2???           00062     CALL    ISR_INIT
+                      00063     
+                      00064     
+                      00065     
+0096                  00066 LOOP
+                      00067     ;found this guy... he's basically doing the same thing as you
+                      00068     ;he even looked at a few of the same phase graphs
+                      00069     ;https://simple-circuit.com/arduino-sensorless-bldc-motor-controller-esc/
+                      00070     
+                      00071     ;implement some kind of delay before BEMF_NEXT (phase shift)
+                      00072     ;speed control
+0096   2???           00073     GOTO    LOOP                ;Goto start of loop
+                      00074     
 Warning[205]: Found directive in column 1. (END)
-30C4                  00062 END
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  6
+30C4                  00075 END
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  8
 
 
 SYMBOL TABLE
@@ -301,6 +433,14 @@ ANS5                              00000005
 ANS6                              00000006
 ANS7                              00000007
 ANSEL                             00000091
+BEMF_CHCK_HIGH                    00000066
+BEMF_CHCK_LOW                     00000061
+BEMF_INCR_TRIG                    00000068
+BEMF_INIT                         00000044
+BEMF_NEXT                         0000006A
+BEMF_TRIG                         0000005B
+BEMF_TRIG_END                     0000006C
+BEMF_UPDATE_INTPIN                0000004D
 C                                 00000000
 C1IE                              00000003
 C1IF                              00000003
@@ -326,6 +466,12 @@ CHS1                              00000003
 CHS2                              00000004
 CIS                               00000003
 CM0                               00000000
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 CM1                               00000001
 CM2                               00000002
 CMCON0                            00000019
@@ -333,25 +479,20 @@ CMCON1                            0000001A
 DC                                00000001
 DC1B0                             00000004
 DC1B1                             00000005
-DRV_CHCK_STEP0                    0000001A
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  7
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
-DRV_CHCK_STEP1                    00000020
-DRV_CHCK_STEP2                    00000026
-DRV_CHCK_STEP3                    0000002C
-DRV_CHCK_STEP4                    00000032
-DRV_CHCK_STEP5                    00000038
+DRV_CHCK_STEP0                    00000019
+DRV_CHCK_STEP1                    0000001F
+DRV_CHCK_STEP2                    00000025
+DRV_CHCK_STEP3                    0000002B
+DRV_CHCK_STEP4                    00000031
+DRV_CHCK_STEP5                    00000037
 DRV_CUR_STEP                      00000070
 DRV_INIT                          00000005
-DRV_NEXT_STEP                     00000018
-DRV_NEXT_STEP_APPLY               00000039
-DRV_START                         00000016
-DRV_STATE                         00000001
-DRV_STOP                          00000011
+DRV_LOAD_STEP                     00000019
+DRV_NEXT_EMFVAL                   00000001
+DRV_NEXT_STEP                     00000039
+DRV_RUN                           00000000
+DRV_START                         00000012
+DRV_STOP                          00000014
 ECCPAS                            00000017
 ECCPAS0                           00000004
 ECCPAS1                           00000005
@@ -375,7 +516,7 @@ GO_DONE                           00000001
 GO_NOT_DONE                       00000001
 HTS                               00000002
 INDF                              00000000
-INIT                              00000054
+INIT                              00000091
 INTCON                            0000000B
 INTE                              00000004
 INTEDG                            00000006
@@ -384,6 +525,12 @@ IOC                               00000096
 IOC0                              00000000
 IOC1                              00000001
 IOC2                              00000002
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE 10
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 IOC3                              00000003
 IOC4                              00000004
 IOC5                              00000005
@@ -393,20 +540,14 @@ IOCA1                             00000001
 IOCA2                             00000002
 IOCA3                             00000003
 IOCA4                             00000004
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  8
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 IOCA5                             00000005
 IRCF0                             00000004
 IRCF1                             00000005
 IRCF2                             00000006
 IRP                               00000007
-ISR                               00000050
-ISR_INIT                          0000004E
-LOOP                              00000058
+ISR                               0000008C
+ISR_INIT                          0000008A
+LOOP                              00000096
 LTS                               00000001
 NOT_BOD                           00000000
 NOT_BOR                           00000000
@@ -443,6 +584,12 @@ PR2                               00000092
 PRSEN                             00000007
 PS0                               00000000
 PS1                               00000001
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 PS2                               00000002
 PSA                               00000003
 PSSAC0                            00000002
@@ -452,12 +599,6 @@ PSSBD1                            00000001
 PWM1CON                           00000016
 RA0                               00000000
 RA1                               00000001
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE  9
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 RA2                               00000002
 RA3                               00000003
 RA4                               00000004
@@ -483,6 +624,7 @@ STEP2                             00000034
 STEP3                             00000032
 STEP4                             0000001A
 STEP5                             00000019
+STEPOFF                           00000038
 SWDTEN                            00000000
 T0CS                              00000005
 T0IE                              00000005
@@ -501,6 +643,14 @@ T2CKPS1                           00000001
 T2CON                             00000012
 T2IE                              00000001
 T2IF                              00000001
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TEMPA                             00000072
+TEMPB                             00000073
 TMR0                              00000001
 TMR0IE                            00000005
 TMR0IF                            00000002
@@ -511,19 +661,18 @@ TMR1H                             0000000F
 TMR1IE                            00000000
 TMR1IF                            00000000
 TMR1L                             0000000E
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE 10
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 TMR1ON                            00000000
 TMR2                              00000011
 TMR2IE                            00000001
 TMR2IF                            00000001
 TMR2ON                            00000002
-TMR_INIT                          00000041
-TMR_TRIG                          0000004B
+TMR_CLS_LOOP                      00000002
+TMR_CYCLES1                       00000074
+TMR_CYCLES2                       00000075
+TMR_INIT                          0000006E
+TMR_OPN_LP_LIM                    000000FE
+TMR_TRIG                          0000007B
+TMR_TRIG_END                      00000088
 TOUTPS0                           00000003
 TOUTPS1                           00000004
 TOUTPS2                           00000005
@@ -553,6 +702,12 @@ VR0                               00000000
 VR1                               00000001
 VR2                               00000002
 VR3                               00000003
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 VRCON                             00000099
 VREN                              00000007
 VRR                               00000005
@@ -570,12 +725,6 @@ WPU4                              00000004
 WPU5                              00000005
 WPUA                              00000095
 WPUA0                             00000000
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE 11
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 WPUA1                             00000001
 WPUA2                             00000002
 WPUA4                             00000004
@@ -612,6 +761,12 @@ _FOSC_HS                          00003FFA
 _FOSC_INTOSCCLK                   00003FFD
 _FOSC_INTOSCIO                    00003FFC
 _FOSC_LP                          00003FF8
+MPASM 5.76                          MAIN.ASM   2-9-2018  13:22:11         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 _FOSC_XT                          00003FF9
 _HS_OSC                           00003FFA
 _IDLOC0                           00002000
@@ -629,12 +784,6 @@ _MCLRE_OFF                        00003FDF
 _MCLRE_ON                         00003FFF
 _PWRTE_OFF                        00003FFF
 _PWRTE_ON                         00003FEF
-MPASM 5.76                          MAIN.ASM   1-29-2018  13:07:44         PAGE 12
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 _WDTE_OFF                         00003FF7
 _WDTE_ON                          00003FFF
 _WDT_OFF                          00003FF7
@@ -643,7 +792,7 @@ _XT_OSC                           00003FF9
 __16F684                          00000001
 
 Errors   :     0
-Warnings :    17 reported,     0 suppressed
-Messages :     8 reported,     0 suppressed
+Warnings :    26 reported,     0 suppressed
+Messages :    14 reported,     0 suppressed
 
 

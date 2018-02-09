@@ -1,15 +1,15 @@
 DRV_INIT
     CLRF    DRV_CUR_STEP	;Reset step counter
-    BCF	    ESTAT, DRV_STATE	;Set driver state to off
+    BCF	    ESTAT, DRV_RUN	;Set driver state to off
+    BSF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to high
     
     BCF	    STATUS, RP0		;BANK 0
-    ;Turn comparators off
-    MOVLW   b'00000111'
-    IORWF   CMCON0
     
-    ;Turn off all driver pins
-    MOVLW   b'00111000'	    
-    MOVWF   PORTC	    
+    MOVLW   b'00000111'		;Turn comparators off
+    IORWF   CMCON0		;
+        
+    MOVLW   STEPOFF		;Turn off all driver pins
+    MOVWF   PORTC		;
     
     BSF	    STATUS, RP0		;BANK 1
     CLRF    TRISC		;Set driver control pins to output
@@ -19,29 +19,22 @@ DRV_INIT
     
     RETURN
 
+DRV_START
+    BSF	    ESTAT, DRV_RUN	;Set driver run to on
+    
+    RETURN
+    
 DRV_STOP
-    BCF	    ESTAT, DRV_STATE	;Set driver state to off
+    BCF	    ESTAT, DRV_RUN	;Set driver run to off
     
     ;Turn off all driver pins
     BCF	    STATUS, RP0		;BANK 0
-    MOVLW   b'00111000'	    
+    MOVLW   STEPOFF   
     MOVWF   PORTC	   
     
     RETURN
-
-DRV_START
-    BSF	    ESTAT, DRV_STATE	;Set driver state to on
     
-    RETURN
-    
-    
-DRV_NEXT_STEP
-    ;Return if driver state is off
-    BTFSS   ESTAT, DRV_STATE
-    RETURN
-    
-    ;Load correct step pin outputs into working memory
-    
+DRV_LOAD_STEP 
     DRV_CHCK_STEP0
     ;Check if step 0
     MOVLW   d'0'
@@ -49,9 +42,8 @@ DRV_NEXT_STEP
     BTFSS   STATUS, Z
     GOTO    DRV_CHCK_STEP1
     ;else
-    MOVLW   STEP0
-    
-    GOTO    DRV_NEXT_STEP_APPLY
+    BCF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to HIGH
+    RETLW   STEP0
     
     DRV_CHCK_STEP1
     ;Check if step 1
@@ -60,9 +52,8 @@ DRV_NEXT_STEP
     BTFSS   STATUS, Z
     GOTO    DRV_CHCK_STEP2
     ;else
-    MOVLW   STEP1
-    
-    GOTO    DRV_NEXT_STEP_APPLY
+    BSF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to LOW
+    RETLW   STEP1
 
     DRV_CHCK_STEP2
     ;Check if step 2
@@ -71,9 +62,8 @@ DRV_NEXT_STEP
     BTFSS   STATUS, Z
     GOTO    DRV_CHCK_STEP3
     ;else
-    MOVLW   STEP2
-    
-    GOTO    DRV_NEXT_STEP_APPLY
+    BCF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to HIGH
+    RETLW   STEP2
     
     DRV_CHCK_STEP3
     ;Check if step 3
@@ -82,9 +72,8 @@ DRV_NEXT_STEP
     BTFSS   STATUS, Z
     GOTO    DRV_CHCK_STEP4
     ;else
-    MOVLW   STEP3
-    
-    GOTO    DRV_NEXT_STEP_APPLY
+    BSF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to LOW
+    RETLW   STEP3
     
     DRV_CHCK_STEP4
     ;Check if step 4
@@ -93,15 +82,21 @@ DRV_NEXT_STEP
     BTFSS   STATUS, Z
     GOTO    DRV_CHCK_STEP5
     ;else
-    MOVLW   STEP4
-    
-    GOTO    DRV_NEXT_STEP_APPLY
+    BCF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to HIGH
+    RETLW   STEP4
     
     DRV_CHCK_STEP5
-    ;It is step 5
-    MOVLW   STEP5
+    ;It is step 5 or above
+    BSF	    ESTAT, DRV_NEXT_EMFVAL  ;Set next BEMF state to LOW
+    RETLW   STEP5		    
     
-    DRV_NEXT_STEP_APPLY
+DRV_NEXT_STEP
+    ;Return if driver state is off
+    BTFSS   ESTAT, DRV_RUN
+    RETURN
+    
+    CALL    DRV_LOAD_STEP	;Load correct step pin outputs into working
+    
     BCF	    STATUS, RP0		;BANK 0
     MOVWF   PORTC		;Update driver pins
     

@@ -18,40 +18,54 @@ INCLUDE "p16f684.inc"
 ; ******* CONSTANTS *************************************************
     ;Step table
     ;All off		b'00111000'
-    ;All on		    b'00000111'
+    ;All on (NEVER USE)	b'00000111'
+    STEPOFF	    EQU	b'00111000' ;All off
     STEP0	    EQU	b'00101001' ;0+4 on
     STEP1	    EQU	b'00101100' ;2+4 on
     STEP2	    EQU	b'00110100' ;2+3 on
     STEP3	    EQU	b'00110010' ;1+3 on
     STEP4	    EQU	b'00011010' ;1+5 on
     STEP5	    EQU	b'00011001' ;0+5 on
-    
+   
+    TMR_OPN_LP_LIM  EQU	d'254'	;254
+	    
     ;ESTAT bits
-    DRV_STATE	    EQU	d'1'
+    DRV_RUN	    EQU	d'0'
+    DRV_NEXT_EMFVAL EQU d'1'
+    TMR_CLS_LOOP    EQU	d'2'	    ;1 = BEMF control, 0 = Timer control
 	    
     cblock  0x70
     DRV_CUR_STEP
     ESTAT
+    TEMPA
+    TEMPB
+    TMR_CYCLES1
+    TMR_CYCLES2
     endc
 
 ; ******* MODULES ***************************************************
 #INCLUDE    "driver.inc"
-#INCLUDE    "timer.inc"
+
 #INCLUDE    "BEMF.inc"
+#INCLUDE    "timer.inc"
+
 #INCLUDE    "ISR.inc"
     
 ; ******* SETUP *****************************************************
 INIT
     CALL    DRV_INIT
-    CALL    DRV_START
     
+    CALL    BEMF_INIT
     CALL    TMR_INIT
     
+    CALL    DRV_START
     CALL    ISR_INIT
-    ;CALL    DRV_NEXT_STEP
+    
+    
+    
 LOOP
-    
-    
+    ;implement some kind of delay before BEMF_NEXT (phase shift)
+    ;speed control
     GOTO    LOOP		;Goto start of loop
     
 END
