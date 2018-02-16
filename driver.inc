@@ -36,7 +36,7 @@ DRV_STOP
     
 DRV_LOAD_STEP 
     DRV_CHCK_STEP0
-    ;Check if step 0
+    ;Check if not step 0
     MOVLW   d'0'
     SUBWF   DRV_CUR_STEP, W
     BTFSS   STATUS, Z
@@ -46,7 +46,7 @@ DRV_LOAD_STEP
     RETLW   STEP0
     
     DRV_CHCK_STEP1
-    ;Check if step 1
+    ;Check if not step 1
     MOVLW   d'1'
     SUBWF   DRV_CUR_STEP, W
     BTFSS   STATUS, Z
@@ -56,7 +56,7 @@ DRV_LOAD_STEP
     RETLW   STEP1
 
     DRV_CHCK_STEP2
-    ;Check if step 2
+    ;Check if not step 2
     MOVLW   d'2'
     SUBWF   DRV_CUR_STEP, W
     BTFSS   STATUS, Z
@@ -66,7 +66,7 @@ DRV_LOAD_STEP
     RETLW   STEP2
     
     DRV_CHCK_STEP3
-    ;Check if step 3
+    ;Check if not step 3
     MOVLW   d'3'
     SUBWF   DRV_CUR_STEP, W
     BTFSS   STATUS, Z
@@ -76,7 +76,7 @@ DRV_LOAD_STEP
     RETLW   STEP3
     
     DRV_CHCK_STEP4
-    ;Check if step 4
+    ;Check if not step 4
     MOVLW   d'4'
     SUBWF   DRV_CUR_STEP, W
     BTFSS   STATUS, Z
